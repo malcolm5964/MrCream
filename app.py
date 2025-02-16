@@ -183,44 +183,39 @@ def dashboard():
 
 
 
-@app.route("/add_item", methods=["GET", "POST"])
+@app.route("/add_item", methods=["POST"])
 @login_required
 def add_item():
-    if current_user.role != "Manager":
+    if current_user.role not in ["Owner", "Manager"]:
         flash("Access Denied! Only Managers can add items.", "danger")
         return redirect(url_for("dashboard"))
 
+    item_name = request.form["item_name"]
+    stock_count = request.form["stock_count"]
+    image_url = request.form["image_url"]  # User enters this manually
+
+    if not image_url.startswith("https://ict2006-images.s3.amazonaws.com/uploads/"):
+        flash("Invalid S3 URL. Ensure you uploaded the image to the correct bucket.", "danger")
+        return redirect(url_for("dashboard"))
+
     conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
+    cursor = conn.cursor()
 
-    cursor.execute("SELECT id, location FROM outlets WHERE manager_id = %s", (current_user.id,))
-    outlet = cursor.fetchone()
+    try:
+        cursor.execute("""
+            INSERT INTO inventory (item_name, stock_count, image_url) 
+            VALUES (%s, %s, %s)
+        """, (item_name, stock_count, image_url))
+        conn.commit()
+        flash("Item added successfully!", "success")
+    except mysql.connector.Error as e:
+        flash(f"Error: {str(e)}", "danger")
+    finally:
+        cursor.close()
+        conn.close()
 
-    if not outlet:
-        flash("No outlet assigned to you. Contact the Owner.", "danger")
-        return redirect(url_for("dashboard"))
+    return redirect(url_for("dashboard"))
 
-    if request.method == "POST":
-        item_name = request.form["item_name"]
-        stock_count = request.form["stock_count"]
-        image_url = request.form["image_url"] if request.form["image_url"] else "default.jpg"
-
-        try:
-            cursor.execute("""
-                INSERT INTO inventory (outlet_id, item_name, stock_count, image_url) 
-                VALUES (%s, %s, %s, %s)
-            """, (outlet["id"], item_name, stock_count, image_url))
-            conn.commit()
-            flash("Item added successfully!", "success")
-        except mysql.connector.Error as e:
-            flash(f"Error: {str(e)}", "danger")
-        finally:
-            cursor.close()
-            conn.close()
-
-        return redirect(url_for("dashboard"))
-
-    return render_template("add_item.html", outlet=outlet)
 
 @app.route("/update_stock", methods=["POST"])
 @login_required
