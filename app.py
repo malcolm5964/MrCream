@@ -186,14 +186,13 @@ def dashboard():
 @app.route("/add_item", methods=["GET", "POST"])
 @login_required
 def add_item():
-    if current_user.role not in ["Owner", "Manager"]:
+    if current_user.role != "Manager":
         flash("Access Denied! Only Managers can add items.", "danger")
         return redirect(url_for("dashboard"))
 
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
 
-    # Get the manager's assigned outlet
     cursor.execute("SELECT id, location FROM outlets WHERE manager_id = %s", (current_user.id,))
     outlet = cursor.fetchone()
 
@@ -204,12 +203,7 @@ def add_item():
     if request.method == "POST":
         item_name = request.form["item_name"]
         stock_count = request.form["stock_count"]
-        image_url = request.form["image_url"]  # User manually enters this
-
-        # Ensure the user enters a valid S3 URL
-        if not image_url.startswith("https://ict2006-images.s3.amazonaws.com/uploads/"):
-            flash("Invalid S3 URL. Ensure you uploaded the image to the correct bucket.", "danger")
-            return redirect(url_for("add_item"))
+        image_url = request.form["image_url"] if request.form["image_url"] else "default.jpg"
 
         try:
             cursor.execute("""
