@@ -147,29 +147,39 @@ def dashboard():
     cursor = conn.cursor(dictionary=True)
 
     if current_user.role == "Owner":
-        cursor.execute("SELECT DISTINCT location FROM outlets")  # Get unique locations
+        # Get all unique outlet locations
+        cursor.execute("SELECT DISTINCT location FROM outlets")
         outlets = cursor.fetchall()
 
+        # Fetch all inventory across outlets
         cursor.execute("""
-            SELECT o.location, i.id AS inventory_id, i.item_name, i.stock_count
+            SELECT o.location, i.id AS inventory_id, i.item_name, i.stock_count, i.image_url
             FROM inventory i
             JOIN outlets o ON i.outlet_id = o.id
         """)
+        inventory_data = cursor.fetchall()
+
     else:
-        cursor.execute("SELECT o.location FROM outlets WHERE manager_id = %s", (current_user.id,))
-        outlets = cursor.fetchall()
+        # Fetch the single outlet assigned to the manager
+        cursor.execute("SELECT id, location FROM outlets WHERE manager_id = %s", (current_user.id,))
+        outlet = cursor.fetchone()  # ✅ Get a single outlet, not a list
 
-        cursor.execute("""
-            SELECT o.location, i.id AS inventory_id, i.item_name, i.stock_count
-            FROM inventory i
-            JOIN outlets o ON i.outlet_id = o.id
-            WHERE o.manager_id = %s
-        """, (current_user.id,))
+        if outlet:
+            outlets = [outlet]  # ✅ Wrap single outlet in a list
+            cursor.execute("""
+                SELECT o.location, i.id AS inventory_id, i.item_name, i.stock_count, i.image_url
+                FROM inventory i
+                JOIN outlets o ON i.outlet_id = o.id
+                WHERE o.id = %s
+            """, (outlet["id"],))
+            inventory_data = cursor.fetchall()
+        else:
+            outlets = []
+            inventory_data = []
 
-    inventory_data = cursor.fetchall()
     conn.close()
-
     return render_template("dashboard.html", inventory=inventory_data, outlets=outlets)
+
 
 
 
