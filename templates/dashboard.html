@@ -46,7 +46,10 @@
     </nav>
 
     <div class="container mt-4">
-        <h2>Welcome, {{ current_user.username }}!</h2>
+        <div class="d-flex justify-content-between align-items-center">
+            <h2>Welcome, {{ current_user.username }}!</h2>
+            <a href="{{ url_for('add_item') }}" class="btn btn-primary">Add Item</a>
+        </div>
         <p class="lead">Your Inventory Overview</p>
 
         {% if current_user.role == "Owner" %}
@@ -74,7 +77,7 @@
                         <h5 class="card-title">{{ item.item_name }}</h5>
                         <p class="card-text">Stock: <strong>{{ item.stock_count }}</strong></p>
                         
-                        {% if current_user.role == "Manager" %}
+                        {% if current_user.role in ["Owner", "Manager"] %}
                         <button class="btn btn-primary btn-sm mt-2" onclick="openEditModal('{{ item.inventory_id }}', '{{ item.item_name }}', '{{ item.stock_count }}')">Edit Stock</button>
                         <a href="{{ url_for('delete_item', item_id=item.inventory_id) }}" class="btn btn-danger btn-sm mt-2">Delete</a>
                         {% endif %}
@@ -85,10 +88,6 @@
         </div>
         {% else %}
             <p>No items in stock yet.</p>
-        {% endif %}
-
-        {% if current_user.role == "Manager" %}
-            <a href="{{ url_for('add_item') }}" class="btn btn-primary">Add Item</a>
         {% endif %}
     </div>
 
