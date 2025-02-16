@@ -4,11 +4,11 @@ import os
 
 app = Flask(__name__)
 
-# Replace these with your actual RDS instance details
-DB_HOST = "database-1.cxqhjpfrxikd.us-east-1.rds.amazonaws.com"
-DB_USER = "admin"
-DB_PASSWORD = "testtest"
-DB_NAME = "MrCreamdb"
+# Load DB credentials from environment variables
+DB_HOST = os.getenv("DB_HOST", "default-hostname")
+DB_USER = os.getenv("DB_USER", "default-user")
+DB_PASSWORD = os.getenv("DB_PASSWORD", "default-password")
+DB_NAME = os.getenv("DB_NAME", "default-dbname")
 
 # Function to connect to RDS
 def connect_to_database():
