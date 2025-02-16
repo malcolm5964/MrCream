@@ -5,20 +5,54 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script>
+        function sortTable(n) {
+            let table, rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
+            table = document.getElementById("inventoryTable");
+            switching = true;
+            dir = "asc"; // Set sorting direction to ascending
+            
+            while (switching) {
+                switching = false;
+                rows = table.rows;
+                
+                for (i = 1; i < (rows.length - 1); i++) {
+                    shouldSwitch = false;
+                    x = rows[i].getElementsByTagName("TD")[n];
+                    y = rows[i + 1].getElementsByTagName("TD")[n];
+                    
+                    if (dir === "asc") {
+                        if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {
+                            shouldSwitch = true;
+                            break;
+                        }
+                    } else if (dir === "desc") {
+                        if (x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()) {
+                            shouldSwitch = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (shouldSwitch) {
+                    rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+                    switching = true;
+                    switchcount++;
+                } else {
+                    if (switchcount === 0 && dir === "asc") {
+                        dir = "desc";
+                        switching = true;
+                    }
+                }
+            }
+        }
+    </script>
 </head>
 <body class="bg-light">
     <nav class="navbar navbar-dark bg-dark">
         <div class="container">
             <a class="navbar-brand" href="#">Dashboard</a>
             <a class="btn btn-danger" href="{{ url_for('logout') }}">Logout</a>
-            {% if current_user.role == "Owner" %}
-                <div class="text-center">
-                    <a class="btn btn-success" href="{{ url_for('create_manager') }}">Add New Manager</a>
-                </div>
-            {% endif %}
-            {% if current_user.role == "Owner" %}
-                <a class="btn btn-success" href="{{ url_for('create_outlet') }}">Create New Outlet</a>
-            {% endif %}
         </div>
     </nav>
 
@@ -27,18 +61,25 @@
         <p class="lead">Your Inventory Overview</p>
 
         {% if inventory %}
-        <table class="table">
+        <table id="inventoryTable" class="table">
             <thead>
                 <tr>
-                    <th>Outlet Location</th>
-                    <th>Item</th>
-                    <th>Stock Count</th>
+                    {% if current_user.role == "Owner" %}
+                        <th onclick="sortTable(0)" style="cursor:pointer;">Outlet Location ⬍</th>
+                        <th onclick="sortTable(1)" style="cursor:pointer;">Item ⬍</th>
+                        <th onclick="sortTable(2)" style="cursor:pointer;">Stock Count ⬍</th>
+                    {% else %}
+                        <th onclick="sortTable(0)" style="cursor:pointer;">Item ⬍</th>
+                        <th onclick="sortTable(1)" style="cursor:pointer;">Stock Count ⬍</th>
+                    {% endif %}
                 </tr>
             </thead>
             <tbody>
                 {% for item in inventory %}
                 <tr>
-                    <td>{{ item.location }}</td>
+                    {% if current_user.role == "Owner" %}
+                        <td>{{ item.location }}</td>
+                    {% endif %}
                     <td>{{ item.item_name }}</td>
                     <td>{{ item.stock_count }}</td>
                 </tr>
@@ -53,6 +94,5 @@
             <a href="{{ url_for('add_item') }}" class="btn btn-primary">Add Item</a>
         {% endif %}
     </div>
-    
 </body>
 </html>
