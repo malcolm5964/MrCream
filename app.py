@@ -26,38 +26,16 @@ class User(UserMixin):
 # Load User Function
 @login_manager.user_loader
 def load_user(user_id):
-    conn = mysql.connector.connect(host=DB_HOST, user=DB_USER, password=DB_PASSWORD, database=DB_NAME)
-    cursor = conn.cursor()
-    cursor.execute("SELECT id, username FROM users WHERE id = %s", (user_id,))
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT id, username, role FROM users WHERE id = %s", (user_id,))
     user = cursor.fetchone()
     conn.close()
 
     if user:
-        return User(user[0], user[1])
+        return User(user["id"], user["username"], user["role"])
     return None
 
-# Signup Route
-@app.route("/signup", methods=["GET", "POST"])
-def signup():
-    if request.method == "POST":
-        username = request.form["username"]
-        email = request.form["email"]
-        password = bcrypt.generate_password_hash(request.form["password"]).decode("utf-8")
-
-        conn = mysql.connector.connect(host=DB_HOST, user=DB_USER, password=DB_PASSWORD, database=DB_NAME)
-        cursor = conn.cursor()
-        try:
-            cursor.execute("INSERT INTO users (username, email, password_hash) VALUES (%s, %s, %s)", (username, email, password))
-            conn.commit()
-            flash("Account created! Please log in.", "success")
-            return redirect(url_for("login"))
-        except mysql.connector.Error:
-            flash("Username or Email already exists!", "danger")
-        finally:
-            cursor.close()
-            conn.close()
-
-    return render_template("signup.html")
 
 # Login Route
 @app.route("/login", methods=["GET", "POST"])
@@ -80,6 +58,51 @@ def login():
             flash("Invalid username or password!", "danger")
 
     return render_template("login.html")
+
+@app.route("/create_manager", methods=["GET", "POST"])
+@login_required
+def create_manager():
+    if current_user.role != "Owner":
+        flash("Access Denied! Only Owners can create Managers.", "danger")
+        return redirect(url_for("dashboard"))
+
+    if request.method == "POST":
+        username = request.form["username"]
+        email = request.form["email"]
+        password = bcrypt.generate_password_hash(request.form["password"]).decode("utf-8")
+        outlet_id = request.form["outlet_id"]
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        try:
+            # Insert new manager into users table
+            cursor.execute("INSERT INTO users (username, email, password_hash, role) VALUES (%s, %s, %s, 'Manager')",
+                           (username, email, password))
+            manager_id = cursor.lastrowid  # Get the new manager's ID
+
+            # Assign the manager to an outlet
+            cursor.execute("UPDATE outlets SET manager_id = %s WHERE id = %s", (manager_id, outlet_id))
+
+            conn.commit()
+            flash("Manager created and assigned to outlet!", "success")
+        except mysql.connector.Error as e:
+            flash(f"Error: {str(e)}", "danger")
+        finally:
+            cursor.close()
+            conn.close()
+
+        return redirect(url_for("dashboard"))
+
+    # Fetch outlets that don't have a manager assigned
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM outlets WHERE manager_id IS NULL")
+    available_outlets = cursor.fetchall()
+    conn.close()
+
+    return render_template("create_manager.html", outlets=available_outlets)
+
 
 # Protected Dashboard Route
 @app.route("/dashboard")
