@@ -23,9 +23,10 @@ def get_db_connection():
 
 # User Class for Flask-Login
 class User(UserMixin):
-    def __init__(self, id, username):
+    def __init__(self, id, username, role):
         self.id = id
         self.username = username
+        self.role = role
 
 # Load User Function
 @login_manager.user_loader
