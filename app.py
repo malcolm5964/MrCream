@@ -83,8 +83,8 @@ def create_manager():
 
         try:
             # Insert new manager into users table
-            cursor.execute("INSERT INTO users (username, email, password_hash, role) VALUES (%s, %s, %s, 'Manager')",
-                           (username, email, password))
+            cursor.execute("INSERT INTO users (username, email, password_hash, role) VALUES (%s, %s, %s, %s)",
+                           (username, email, password, 'Manager'))
             manager_id = cursor.lastrowid  # Get the new manager's ID
 
             # Assign the manager to an outlet
@@ -103,11 +103,40 @@ def create_manager():
     # Fetch outlets that don't have a manager assigned
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM outlets WHERE manager_id IS NULL")
+    cursor.execute("SELECT id, location FROM outlets WHERE manager_id IS NULL")
     available_outlets = cursor.fetchall()
     conn.close()
 
     return render_template("create_manager.html", outlets=available_outlets)
+
+
+
+@app.route("/create_outlet", methods=["GET", "POST"])
+@login_required
+def create_outlet():
+    if current_user.role != "Owner":
+        flash("Access Denied! Only Owners can create outlets.", "danger")
+        return redirect(url_for("dashboard"))
+
+    if request.method == "POST":
+        location = request.form["location"]
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute("INSERT INTO outlets (location) VALUES (%s)", (location,))
+            conn.commit()
+            flash("Outlet created successfully!", "success")
+        except mysql.connector.Error as e:
+            flash(f"Error: {str(e)}", "danger")
+        finally:
+            cursor.close()
+            conn.close()
+
+        return redirect(url_for("dashboard"))
+
+    return render_template("create_outlet.html")
 
 
 # Protected Dashboard Route

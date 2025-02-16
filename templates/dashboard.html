@@ -16,6 +16,9 @@
                     <a class="btn btn-success" href="{{ url_for('create_manager') }}">Add New Manager</a>
                 </div>
             {% endif %}
+            {% if current_user.role == "Owner" %}
+                <a class="btn btn-success" href="{{ url_for('create_outlet') }}">Create New Outlet</a>
+            {% endif %}
         </div>
     </nav>
 

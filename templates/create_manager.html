@@ -23,10 +23,10 @@
                 <input type="password" name="password" class="form-control" required>
             </div>
             <div class="mb-3">
-                <label class="form-label">Assign to Outlet</label>
+                <label class="form-label">Assign to Outlet (Location)</label>
                 <select name="outlet_id" class="form-select" required>
                     {% for outlet in outlets %}
-                    <option value="{{ outlet.id }}">{{ outlet.name }} - {{ outlet.location }}</option>
+                    <option value="{{ outlet.id }}">{{ outlet.location }}</option>
                     {% endfor %}
                 </select>
             </div>
