@@ -140,21 +140,25 @@ def create_outlet():
 
 
 # Protected Dashboard Route
-@app.route("/dashboard")
+@app.route("/dashboard", methods=["GET", "POST"])
 @login_required
 def dashboard():
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
 
     if current_user.role == "Owner":
-        # Owners can see all outlets' inventory
+        cursor.execute("SELECT DISTINCT location FROM outlets")  # Get unique locations
+        outlets = cursor.fetchall()
+
         cursor.execute("""
             SELECT o.location, i.id AS inventory_id, i.item_name, i.stock_count
             FROM inventory i
             JOIN outlets o ON i.outlet_id = o.id
         """)
     else:
-        # Managers only see their assigned outlet's inventory
+        cursor.execute("SELECT o.location FROM outlets WHERE manager_id = %s", (current_user.id,))
+        outlets = cursor.fetchall()
+
         cursor.execute("""
             SELECT o.location, i.id AS inventory_id, i.item_name, i.stock_count
             FROM inventory i
@@ -164,8 +168,9 @@ def dashboard():
 
     inventory_data = cursor.fetchall()
     conn.close()
-    
-    return render_template("dashboard.html", inventory=inventory_data)
+
+    return render_template("dashboard.html", inventory=inventory_data, outlets=outlets)
+
 
 
 @app.route("/add_item", methods=["GET", "POST"])
