@@ -255,7 +255,7 @@ def update_stock():
 @app.route("/delete_item/<int:item_id>")
 @login_required
 def delete_item(item_id):
-    if current_user.role != "Manager":
+    if current_user.role not in ["Owner", "Manager"]:  # ✅ Allow both Owner and Manager
         flash("Access Denied!", "danger")
         return redirect(url_for("dashboard"))
 
