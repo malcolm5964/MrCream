@@ -183,7 +183,6 @@ def add_item():
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
 
-    # Get the manager's assigned outlet
     cursor.execute("SELECT id, location FROM outlets WHERE manager_id = %s", (current_user.id,))
     outlet = cursor.fetchone()
 
@@ -194,10 +193,13 @@ def add_item():
     if request.method == "POST":
         item_name = request.form["item_name"]
         stock_count = request.form["stock_count"]
+        image_url = request.form["image_url"] if request.form["image_url"] else "default.jpg"
 
         try:
-            cursor.execute("INSERT INTO inventory (outlet_id, item_name, stock_count) VALUES (%s, %s, %s)",
-                           (outlet["id"], item_name, stock_count))
+            cursor.execute("""
+                INSERT INTO inventory (outlet_id, item_name, stock_count, image_url) 
+                VALUES (%s, %s, %s, %s)
+            """, (outlet["id"], item_name, stock_count, image_url))
             conn.commit()
             flash("Item added successfully!", "success")
         except mysql.connector.Error as e:
@@ -209,6 +211,7 @@ def add_item():
         return redirect(url_for("dashboard"))
 
     return render_template("add_item.html", outlet=outlet)
+
 
 
 
