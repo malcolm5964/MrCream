@@ -187,24 +187,28 @@ def dashboard():
 @login_required
 def add_item():
     if current_user.role not in ["Owner", "Manager"]:
-        flash("Access Denied! Only Managers can add items.", "danger")
+        flash("Access Denied! Only Owners and Managers can add items.", "danger")
         return redirect(url_for("dashboard"))
 
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
 
-    # Get the manager's assigned outlet
+    # Debug: Log current user's ID
+    print(f"Current User ID: {current_user.id}")
+
+    # Check if user has an assigned outlet
     cursor.execute("SELECT id, location FROM outlets WHERE manager_id = %s", (current_user.id,))
     outlet = cursor.fetchone()
 
     if not outlet:
         flash("No outlet assigned to you. Contact the Owner.", "danger")
-        return redirect(url_for("dashboard"))
+        print("Redirecting: No outlet found for this manager.")  # Debugging
+        return redirect(url_for("dashboard"))  # ⬅️ This could be the problem
 
     if request.method == "POST":
         item_name = request.form["item_name"]
         stock_count = request.form["stock_count"]
-        image_url = request.form["image_url"]  # User enters this manually
+        image_url = request.form["image_url"]
 
         if not image_url.startswith("https://ict2006-images.s3.amazonaws.com/uploads/"):
             flash("Invalid S3 URL. Ensure you uploaded the image to the correct bucket.", "danger")
@@ -225,7 +229,11 @@ def add_item():
 
         return redirect(url_for("dashboard"))
 
+    # Debugging: Print outlet info before rendering
+    print(f"Rendering add_item.html with outlet: {outlet}")
+
     return render_template("add_item.html", outlet=outlet)
+
 
 
 
