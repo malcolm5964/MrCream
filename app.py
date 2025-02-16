@@ -143,7 +143,69 @@ def create_outlet():
 @app.route("/dashboard")
 @login_required
 def dashboard():
-    return render_template("dashboard.html", username=current_user.username)
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    if current_user.role == "Owner":
+        # Owners can see all outlets' inventory
+        cursor.execute("""
+            SELECT o.location, i.id AS inventory_id, i.item_name, i.stock_count
+            FROM inventory i
+            JOIN outlets o ON i.outlet_id = o.id
+        """)
+    else:
+        # Managers only see their assigned outlet's inventory
+        cursor.execute("""
+            SELECT o.location, i.id AS inventory_id, i.item_name, i.stock_count
+            FROM inventory i
+            JOIN outlets o ON i.outlet_id = o.id
+            WHERE o.manager_id = %s
+        """, (current_user.id,))
+
+    inventory_data = cursor.fetchall()
+    conn.close()
+    
+    return render_template("dashboard.html", inventory=inventory_data)
+
+
+@app.route("/add_item", methods=["GET", "POST"])
+@login_required
+def add_item():
+    if current_user.role != "Manager":
+        flash("Access Denied! Only Managers can add items.", "danger")
+        return redirect(url_for("dashboard"))
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    # Get the manager's assigned outlet
+    cursor.execute("SELECT id, location FROM outlets WHERE manager_id = %s", (current_user.id,))
+    outlet = cursor.fetchone()
+
+    if not outlet:
+        flash("No outlet assigned to you. Contact the Owner.", "danger")
+        return redirect(url_for("dashboard"))
+
+    if request.method == "POST":
+        item_name = request.form["item_name"]
+        stock_count = request.form["stock_count"]
+
+        try:
+            cursor.execute("INSERT INTO inventory (outlet_id, item_name, stock_count) VALUES (%s, %s, %s)",
+                           (outlet["id"], item_name, stock_count))
+            conn.commit()
+            flash("Item added successfully!", "success")
+        except mysql.connector.Error as e:
+            flash(f"Error: {str(e)}", "danger")
+        finally:
+            cursor.close()
+            conn.close()
+
+        return redirect(url_for("dashboard"))
+
+    return render_template("add_item.html", outlet=outlet)
+
+
 
 # Logout Route
 @app.route("/logout")

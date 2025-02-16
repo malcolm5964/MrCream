@@ -22,10 +22,37 @@
         </div>
     </nav>
 
-    <div class="container text-center mt-5">
+    <div class="container mt-4">
         <h2>Welcome, {{ current_user.username }}!</h2>
-        <p class="lead">You are logged in.</p>
-        <a class="btn btn-danger" href="{{ url_for('logout') }}">Logout</a>
+        <p class="lead">Your Inventory Overview</p>
+
+        {% if inventory %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Outlet Location</th>
+                    <th>Item</th>
+                    <th>Stock Count</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in inventory %}
+                <tr>
+                    <td>{{ item.location }}</td>
+                    <td>{{ item.item_name }}</td>
+                    <td>{{ item.stock_count }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+            <p>No items in stock yet.</p>
+        {% endif %}
+
+        {% if current_user.role == "Manager" %}
+            <a href="{{ url_for('add_item') }}" class="btn btn-primary">Add Item</a>
+        {% endif %}
     </div>
+    
 </body>
 </html>
