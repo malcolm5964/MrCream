@@ -108,6 +108,40 @@ def create_manager():
     return render_template("create_manager.html", outlets=available_outlets)
 
 
+@app.route("/create_owner", methods=["GET", "POST"])
+def create_owner():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    # Check if an Owner already exists
+    cursor.execute("SELECT id FROM users WHERE role = 'Owner'")
+    existing_owner = cursor.fetchone()
+
+    if existing_owner:
+        flash("An Owner account already exists!", "danger")
+        return redirect(url_for("login"))
+
+    if request.method == "POST":
+        username = request.form["username"]
+        email = request.form["email"]
+        password = bcrypt.generate_password_hash(request.form["password"]).decode("utf-8")
+
+        try:
+            cursor.execute("INSERT INTO users (username, email, password_hash, role) VALUES (%s, %s, %s, 'Owner')",
+                           (username, email, password))
+            conn.commit()
+            flash("Owner account created! You can now log in.", "success")
+            return redirect(url_for("login"))
+        except mysql.connector.Error as e:
+            flash(f"Error: {str(e)}", "danger")
+        finally:
+            cursor.close()
+            conn.close()
+
+    return render_template("create_owner.html")
+
+
+
 # Protected Dashboard Route
 @app.route("/dashboard")
 @login_required
