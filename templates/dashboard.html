@@ -24,16 +24,17 @@
 </head>
 <body class="bg-light">
     <nav class="navbar navbar-dark bg-dark">
-        <div class="container">
+        <div class="container d-flex justify-content-between">
             <a class="navbar-brand" href="#">Dashboard</a>
-            <a class="btn btn-danger" href="{{ url_for('logout') }}">Logout</a>
             
             {% if current_user.role == "Owner" %}
-            <div class="text-center">
-                <a class="btn btn-success" href="{{ url_for('create_manager') }}">Add New Manager</a>
-                <a class="btn btn-success" href="{{ url_for('create_outlet') }}">Create New Outlet</a>
+            <div>
+                <a class="btn btn-success me-2" href="{{ url_for('create_manager') }}">Add New Manager</a>
+                <a class="btn btn-success me-2" href="{{ url_for('create_outlet') }}">Create New Outlet</a>
             </div>
             {% endif %}
+
+            <a class="btn btn-danger" href="{{ url_for('logout') }}">Logout</a>
         </div>
     </nav>
 
