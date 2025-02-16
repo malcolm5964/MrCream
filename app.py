@@ -12,10 +12,14 @@ login_manager = LoginManager(app)
 login_manager.login_view = "login"
 
 # Load DB credentials from environment variables
-DB_HOST = os.getenv("DB_HOST", "database-1.cxqhjpfrxikd.us-east-1.rds.amazonaws.com")
-DB_USER = os.getenv("DB_USER", "admin")
-DB_PASSWORD = os.getenv("DB_PASSWORD", "your-password")
-DB_NAME = os.getenv("DB_NAME", "MrCreamdb")
+DB_HOST = os.getenv("DB_HOST")
+DB_USER = os.getenv("DB_USER")
+DB_PASSWORD = os.getenv("DB_PASSWORD")
+DB_NAME = os.getenv("DB_NAME")
+
+# Function to get a database connection
+def get_db_connection():
+    return mysql.connector.connect(host=DB_HOST, user=DB_USER, password=DB_PASSWORD, database=DB_NAME)
 
 # User Class for Flask-Login
 class User(UserMixin):
@@ -27,7 +31,7 @@ class User(UserMixin):
 @login_manager.user_loader
 def load_user(user_id):
     conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
+    cursor = conn.cursor(dictionary=True)  # Fetch results as dictionary
     cursor.execute("SELECT id, username, role FROM users WHERE id = %s", (user_id,))
     user = cursor.fetchone()
     conn.close()
