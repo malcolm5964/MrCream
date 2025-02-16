@@ -7,16 +7,16 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     
     <script>
-        function filterTable() {
+        function filterItems() {
             let selectedOutlet = document.getElementById("outletFilter").value.toLowerCase();
-            let rows = document.querySelectorAll("#inventoryTable tbody tr");
+            let cards = document.querySelectorAll(".item-card");
 
-            rows.forEach(row => {
-                let outletCell = row.getAttribute("data-outlet").toLowerCase();
-                if (selectedOutlet === "all" || outletCell === selectedOutlet) {
-                    row.style.display = "";
+            cards.forEach(card => {
+                let outlet = card.getAttribute("data-outlet").toLowerCase();
+                if (selectedOutlet === "all" || outlet === selectedOutlet) {
+                    card.style.display = "block";
                 } else {
-                    row.style.display = "none";
+                    card.style.display = "none";
                 }
             });
         }
@@ -44,31 +44,32 @@
         {% if current_user.role == "Owner" %}
         <!-- Frontend Outlet Filter Dropdown -->
         <label for="outletFilter">Select Outlet:</label>
-        <select id="outletFilter" class="form-select d-inline-block w-auto" onchange="filterTable()">
+        <select id="outletFilter" class="form-select d-inline-block w-auto" onchange="filterItems()">
             <option value="all">All Outlets</option>
-            {% for outlet in outlets | unique(attribute='location') %}
-                <option value="{{ outlet.location }}">{{ outlet.location }}</option>
+            {% set seen_locations = [] %}
+            {% for outlet in outlets %}
+                {% if outlet.location not in seen_locations %}
+                    <option value="{{ outlet.location }}">{{ outlet.location }}</option>
+                    {% set _ = seen_locations.append(outlet.location) %}
+                {% endif %}
             {% endfor %}
         </select>
         {% endif %}
 
         {% if inventory %}
-        <table id="inventoryTable" class="table mt-3">
-            <thead>
-                <tr>
-                    <th>Item</th>
-                    <th>Stock Count</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for item in inventory %}
-                <tr data-outlet="{{ item.location }}">
-                    <td>{{ item.item_name }}</td>
-                    <td>{{ item.stock_count }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <div class="row mt-3">
+            {% for item in inventory %}
+            <div class="col-md-4 item-card" data-outlet="{{ item.location | lower }}">
+                <div class="card mb-3 shadow">
+                    <img src="{{ item.image_url }}" class="card-img-top" alt="{{ item.item_name }}" style="height: 200px; object-fit: cover;">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ item.item_name }}</h5>
+                        <p class="card-text">Stock: <strong>{{ item.stock_count }}</strong></p>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
         {% else %}
             <p>No items in stock yet.</p>
         {% endif %}
