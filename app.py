@@ -225,12 +225,16 @@ def add_item():
 @app.route("/update_stock", methods=["POST"])
 @login_required
 def update_stock():
-    if current_user.role != "Manager":
+    if current_user.role not in ["Owner", "Manager"]:
         flash("Access Denied!", "danger")
         return redirect(url_for("dashboard"))
 
-    item_id = request.form["item_id"]
-    new_stock = request.form["stock_count"]
+    item_id = request.form.get("item_id")
+    new_stock = request.form.get("stock_count")
+
+    if not item_id or not new_stock.isdigit():
+        flash("Invalid input!", "danger")
+        return redirect(url_for("dashboard"))
 
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -246,6 +250,7 @@ def update_stock():
         conn.close()
 
     return redirect(url_for("dashboard"))
+
 
 @app.route("/delete_item/<int:item_id>")
 @login_required
