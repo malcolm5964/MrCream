@@ -49,20 +49,21 @@ def login():
         username = request.form["username"]
         password = request.form["password"]
 
-        conn = mysql.connector.connect(host=DB_HOST, user=DB_USER, password=DB_PASSWORD, database=DB_NAME)
+        conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT id, password_hash FROM users WHERE username = %s", (username,))
+        cursor.execute("SELECT id, password_hash, role FROM users WHERE username = %s", (username,))
         user = cursor.fetchone()
         conn.close()
 
         if user and bcrypt.check_password_hash(user[1], password):
-            user_obj = User(user[0], username)
+            user_obj = User(user[0], username, user[2])
             login_user(user_obj)
             return redirect(url_for("dashboard"))
         else:
             flash("Invalid username or password!", "danger")
 
     return render_template("login.html")
+
 
 @app.route("/create_manager", methods=["GET", "POST"])
 @login_required
