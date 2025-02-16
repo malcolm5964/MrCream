@@ -222,7 +222,52 @@ def add_item():
 
     return render_template("add_item.html", outlet=outlet)
 
+@app.route("/update_stock", methods=["POST"])
+@login_required
+def update_stock():
+    if current_user.role != "Manager":
+        flash("Access Denied!", "danger")
+        return redirect(url_for("dashboard"))
 
+    item_id = request.form["item_id"]
+    new_stock = request.form["stock_count"]
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute("UPDATE inventory SET stock_count = %s WHERE id = %s", (new_stock, item_id))
+        conn.commit()
+        flash("Stock updated successfully!", "success")
+    except mysql.connector.Error as e:
+        flash(f"Error: {str(e)}", "danger")
+    finally:
+        cursor.close()
+        conn.close()
+
+    return redirect(url_for("dashboard"))
+
+@app.route("/delete_item/<int:item_id>")
+@login_required
+def delete_item(item_id):
+    if current_user.role != "Manager":
+        flash("Access Denied!", "danger")
+        return redirect(url_for("dashboard"))
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute("DELETE FROM inventory WHERE id = %s", (item_id,))
+        conn.commit()
+        flash("Item deleted successfully!", "success")
+    except mysql.connector.Error as e:
+        flash(f"Error: {str(e)}", "danger")
+    finally:
+        cursor.close()
+        conn.close()
+
+    return redirect(url_for("dashboard"))
 
 
 # Logout Route

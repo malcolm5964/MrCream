@@ -20,6 +20,13 @@
                 }
             });
         }
+
+        function openEditModal(itemId, itemName, stockCount) {
+            document.getElementById("editItemId").value = itemId;
+            document.getElementById("editItemName").innerText = itemName;
+            document.getElementById("editStockCount").value = stockCount;
+            new bootstrap.Modal(document.getElementById("editStockModal")).show();
+        }
     </script>
 </head>
 <body class="bg-light">
@@ -66,6 +73,11 @@
                     <div class="card-body">
                         <h5 class="card-title">{{ item.item_name }}</h5>
                         <p class="card-text">Stock: <strong>{{ item.stock_count }}</strong></p>
+                        
+                        {% if current_user.role == "Manager" %}
+                        <button class="btn btn-primary btn-sm mt-2" onclick="openEditModal('{{ item.inventory_id }}', '{{ item.item_name }}', '{{ item.stock_count }}')">Edit Stock</button>
+                        <a href="{{ url_for('delete_item', item_id=item.inventory_id) }}" class="btn btn-danger btn-sm mt-2">Delete</a>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -79,5 +91,32 @@
             <a href="{{ url_for('add_item') }}" class="btn btn-primary">Add Item</a>
         {% endif %}
     </div>
+
+    <!-- Edit Stock Modal -->
+    <div class="modal fade" id="editStockModal" tabindex="-1" aria-labelledby="editStockLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editStockLabel">Edit Stock for <span id="editItemName"></span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form method="POST" action="{{ url_for('update_stock') }}">
+                    <div class="modal-body">
+                        <input type="hidden" name="item_id" id="editItemId">
+                        <div class="mb-3">
+                            <label for="editStockCount" class="form-label">New Stock Count</label>
+                            <input type="number" class="form-control" name="stock_count" id="editStockCount" required min="0">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary">Update Stock</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
