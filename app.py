@@ -186,7 +186,7 @@ def dashboard():
 @app.route("/add_item", methods=["GET", "POST"])
 @login_required
 def add_item():
-    if current_user.role != "Manager":
+    if current_user.role not in ["Owner", "Manager"]:
         flash("Access Denied! Only Managers can add items.", "danger")
         return redirect(url_for("dashboard"))
 
