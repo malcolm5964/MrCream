@@ -187,20 +187,43 @@ def dashboard():
 @login_required
 def add_item():
     if current_user.role not in ["Owner", "Manager"]:
-        flash("Access Denied! Only Managers can add items.", "danger")
+        flash("Access Denied! Only Managers and Owners can add items.", "danger")
         return redirect(url_for("dashboard"))
 
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
 
-    cursor.execute("SELECT id, location FROM outlets WHERE manager_id = %s", (current_user.id,))
-    outlet = cursor.fetchone()
-
-    if not outlet:
-        flash("No outlet assigned to you. Contact the Owner.", "danger")
-        return redirect(url_for("dashboard"))
+    if current_user.role == "Manager":
+        # For managers, fetch their assigned outlet.
+        cursor.execute("SELECT id, location FROM outlets WHERE manager_id = %s", (current_user.id,))
+        outlet = cursor.fetchone()
+        if not outlet:
+            flash("No outlet assigned to you. Contact the Owner.", "danger")
+            cursor.close()
+            conn.close()
+            return redirect(url_for("dashboard"))
+        context = {"outlet": outlet}
+    else:  # Owner
+        # For owners, fetch all outlets so they can choose one.
+        cursor.execute("SELECT id, location FROM outlets")
+        outlets = cursor.fetchall()
+        if not outlets:
+            flash("No outlets available. Contact the Administrator.", "danger")
+            cursor.close()
+            conn.close()
+            return redirect(url_for("dashboard"))
+        context = {"outlets": outlets}
 
     if request.method == "POST":
+        # If Owner, get the selected outlet_id from the form.
+        if current_user.role == "Owner":
+            outlet_id = request.form.get("outlet_id")
+            if not outlet_id:
+                flash("Please select an outlet.", "danger")
+                return redirect(url_for("add_item"))
+        else:
+            outlet_id = context.get("outlet")["id"]
+
         item_name = request.form["item_name"]
         stock_count = request.form["stock_count"]
         image_url = request.form["image_url"] if request.form["image_url"] else "default.jpg"
@@ -209,7 +232,7 @@ def add_item():
             cursor.execute("""
                 INSERT INTO inventory (outlet_id, item_name, stock_count, image_url) 
                 VALUES (%s, %s, %s, %s)
-            """, (outlet["id"], item_name, stock_count, image_url))
+            """, (outlet_id, item_name, stock_count, image_url))
             conn.commit()
             flash("Item added successfully!", "success")
         except mysql.connector.Error as e:
@@ -220,9 +243,9 @@ def add_item():
 
         return redirect(url_for("dashboard"))
 
-    return render_template("add_item.html", outlet=outlet)
-
-
+    cursor.close()
+    conn.close()
+    return render_template("add_item.html", **context)
 
 
 @app.route("/update_stock", methods=["POST"])
