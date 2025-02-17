@@ -183,9 +183,9 @@ def dashboard():
 
 
 
-@app.route("/add_item", methods=["GET", "POST"])
+@app.route("/add_item/<int:outlet_id>", methods=["GET", "POST"])
 @login_required
-def add_item():
+def add_item(outlet_id):
     if current_user.role not in ["Owner", "Manager"]:
         flash("Access Denied! Only Managers can add items.", "danger")
         return redirect(url_for("dashboard"))
@@ -193,11 +193,12 @@ def add_item():
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
 
-    cursor.execute("SELECT id, location FROM outlets WHERE manager_id = %s", (current_user.id,))
+    # Fetch the outlet based on the provided outlet_id
+    cursor.execute("SELECT id, location FROM outlets WHERE id = %s", (outlet_id,))
     outlet = cursor.fetchone()
 
     if not outlet:
-        flash("No outlet assigned to you. Contact the Owner.", "danger")
+        flash("Invalid outlet. Please select a valid outlet.", "danger")
         return redirect(url_for("dashboard"))
 
     if request.method == "POST":
@@ -211,7 +212,7 @@ def add_item():
                 VALUES (%s, %s, %s, %s)
             """, (outlet["id"], item_name, stock_count, image_url))
             conn.commit()
-            flash("Item added successfully!", "success")
+            flash(f"Item added successfully to {outlet['location']}!", "success")
         except mysql.connector.Error as e:
             flash(f"Error: {str(e)}", "danger")
         finally:
@@ -220,7 +221,8 @@ def add_item():
 
         return redirect(url_for("dashboard"))
 
-    return render_template("add_item.html", outlet=outlet)
+    return render_template("add_item.html", outlet_location=outlet["location"])
+
 
 
 
