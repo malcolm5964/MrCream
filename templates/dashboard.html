@@ -53,19 +53,24 @@
         <p class="lead">Your Inventory Overview</p>
 
         {% if current_user.role == "Owner" %}
-        <!-- Frontend Outlet Filter Dropdown -->
-        <label for="outletFilter">Select Outlet:</label>
-        <select id="outletFilter" class="form-select d-inline-block w-auto" onchange="filterItems()">
-            <option value="all">All Outlets</option>
-            {% set seen_locations = [] %}
+        <label for="outletSelect">Select Outlet:</label>
+        <select id="outletSelect" class="form-select d-inline-block w-auto">
             {% for outlet in outlets %}
-                {% if outlet.location not in seen_locations %}
-                    <option value="{{ outlet.location }}">{{ outlet.location }}</option>
-                    {% set _ = seen_locations.append(outlet.location) %}
-                {% endif %}
+                <option value="{{ outlet.id }}">{{ outlet.location }}</option>
             {% endfor %}
         </select>
+        <a href="#" id="addItemButton" class="btn btn-primary">Add Item</a>
+    
+        <script>
+            document.getElementById("addItemButton").addEventListener("click", function () {
+                let outletId = document.getElementById("outletSelect").value;
+                window.location.href = "/add_item/" + outletId;
+            });
+        </script>
+        {% elif current_user.role == "Manager" and outlets %}
+            <a href="{{ url_for('add_item', outlet_id=outlets[0].id) }}" class="btn btn-primary">Add Item</a>
         {% endif %}
+    
 
         {% if inventory %}
         <div class="row mt-3">
