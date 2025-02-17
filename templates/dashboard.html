@@ -57,15 +57,21 @@
                         <option value="{{ outlet.id }}">{{ outlet.location }}</option>
                     {% endfor %}
                 </select>
-                <a href="#" id="addItemButton" class="btn btn-primary">Add Item</a>
-
+                <button onclick="redirectToAddItem()" class="btn btn-primary">Add Item</button>
+                
                 <script>
-                    document.getElementById("addItemButton").addEventListener("click", function () {
-                        let outletId = document.getElementById("outletSelect").value;
-                        if (outletId) {
-                            window.location.href = "/add_item/" + outletId;
+                    function redirectToAddItem() {
+                        let outletSelect = document.getElementById("outletSelect");
+                        let outletId = outletSelect.value;
+                
+                        if (!outletId) {
+                            alert("Please select an outlet before adding an item.");
+                            return;
                         }
-                    });
+                
+                        // Redirect to the correct add_item page
+                        window.location.href = "/add_item/" + outletId;
+                    }
                 </script>
             {% elif current_user.role == "Manager" and outlets %}
                 <!-- ✅ Managers Can Only Add Items to Their Assigned Outlet -->
