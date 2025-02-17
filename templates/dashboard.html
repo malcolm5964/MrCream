@@ -53,18 +53,20 @@
             {% if current_user.role == "Owner" %}
                 <label for="outletSelect">Select Outlet:</label>
                 <select id="outletSelect" class="form-select d-inline-block w-auto">
+                    <option value="" disabled selected>Select an outlet</option>  <!-- ✅ Add a default disabled option -->
                     {% for outlet in outlets %}
                         <option value="{{ outlet.id }}">{{ outlet.location }}</option>
                     {% endfor %}
                 </select>
+            
                 <button onclick="redirectToAddItem()" class="btn btn-primary">Add Item</button>
                 
                 <script>
                     function redirectToAddItem() {
                         let outletSelect = document.getElementById("outletSelect");
-                        let outletId = outletSelect.value;
+                        let outletId = outletSelect.options[outletSelect.selectedIndex].value;  // ✅ Correctly read selected value
                 
-                        if (!outletId) {
+                        if (!outletId || outletId === "null") {  // ✅ Ensure an outlet is selected
                             alert("Please select an outlet before adding an item.");
                             return;
                         }
@@ -73,6 +75,7 @@
                         window.location.href = "/add_item/" + outletId;
                     }
                 </script>
+                
             {% elif current_user.role == "Manager" and outlets %}
                 <!-- ✅ Managers Can Only Add Items to Their Assigned Outlet -->
                 <a href="{{ url_for('add_item', outlet_id=outlets[0].id) }}" class="btn btn-primary">Add Item</a>
