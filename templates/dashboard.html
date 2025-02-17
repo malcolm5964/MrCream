@@ -48,29 +48,32 @@
     <div class="container mt-4">
         <div class="d-flex justify-content-between align-items-center">
             <h2>Welcome, {{ current_user.username }}!</h2>
-            <a href="{{ url_for('add_item', outlet_id=outlet.id) }}" class="btn btn-primary" type="button">Add Item</a>
-        </div>
-        <p class="lead">Your Inventory Overview</p>
 
-        {% if current_user.role == "Owner" %}
-        <label for="outletSelect">Select Outlet:</label>
-        <select id="outletSelect" class="form-select d-inline-block w-auto">
-            {% for outlet in outlets %}
-                <option value="{{ outlet.id }}">{{ outlet.location }}</option>
-            {% endfor %}
-        </select>
-        <a href="#" id="addItemButton" class="btn btn-primary">Add Item</a>
-    
-        <script>
-            document.getElementById("addItemButton").addEventListener("click", function () {
-                let outletId = document.getElementById("outletSelect").value;
-                window.location.href = "/add_item/" + outletId;
-            });
-        </script>
-        {% elif current_user.role == "Manager" and outlets %}
-            <a href="{{ url_for('add_item', outlet_id=outlets[0].id) }}" class="btn btn-primary">Add Item</a>
-        {% endif %}
-    
+            <!-- ✅ Owners Can Select an Outlet Before Adding an Item -->
+            {% if current_user.role == "Owner" %}
+                <label for="outletSelect">Select Outlet:</label>
+                <select id="outletSelect" class="form-select d-inline-block w-auto">
+                    {% for outlet in outlets %}
+                        <option value="{{ outlet.id }}">{{ outlet.location }}</option>
+                    {% endfor %}
+                </select>
+                <a href="#" id="addItemButton" class="btn btn-primary">Add Item</a>
+
+                <script>
+                    document.getElementById("addItemButton").addEventListener("click", function () {
+                        let outletId = document.getElementById("outletSelect").value;
+                        if (outletId) {
+                            window.location.href = "/add_item/" + outletId;
+                        }
+                    });
+                </script>
+            {% elif current_user.role == "Manager" and outlets %}
+                <!-- ✅ Managers Can Only Add Items to Their Assigned Outlet -->
+                <a href="{{ url_for('add_item', outlet_id=outlets[0].id) }}" class="btn btn-primary">Add Item</a>
+            {% endif %}
+        </div>
+
+        <p class="lead">Your Inventory Overview</p>
 
         {% if inventory %}
         <div class="row mt-3">
