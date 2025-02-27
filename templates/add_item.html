@@ -8,11 +8,13 @@
 </head>
 <body class="bg-light d-flex align-items-center justify-content-center vh-100">
   <div class="card p-4 shadow" style="width: 400px;">
-    {% if outlet %}
-      <h3 class="text-center">Add Item to {{ outlet.location }}</h3>
-    {% elif outlets %}
-      <h3 class="text-center">Add Item</h3>
-      <form method="POST">
+    <form method="POST">
+      {% if outlet %}
+        <h3 class="text-center">Add Item to {{ outlet.location }}</h3>
+        <!-- No need for outlet selection, using hidden field instead -->
+        <input type="hidden" name="outlet_id" value="{{ outlet.id }}">
+      {% elif outlets %}
+        <h3 class="text-center">Add Item</h3>
         <div class="mb-3">
           <label class="form-label">Select Outlet</label>
           <select name="outlet_id" class="form-select" required>
@@ -22,24 +24,26 @@
             {% endfor %}
           </select>
         </div>
-    {% endif %}
-        <div class="mb-3">
-          <label class="form-label">Item Name</label>
-          <input type="text" name="item_name" class="form-control" required>
-        </div>
-        <div class="mb-3">
-          <label class="form-label">Stock Count</label>
-          <input type="number" name="stock_count" class="form-control" required min="1">
-        </div>
-        <div class="mb-3">
-          <label class="form-label">Image URL</label>
-          <input type="text" name="image_url" class="form-control" placeholder="Optional">
-        </div>
-        <button type="submit" class="btn btn-primary w-100">Add Item</button>
-      </form>
-      <div class="text-center mt-3">
-        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Back to Dashboard</a>
+      {% endif %}
+      
+      <div class="mb-3">
+        <label class="form-label">Item Name</label>
+        <input type="text" name="item_name" class="form-control" required>
       </div>
+      <div class="mb-3">
+        <label class="form-label">Stock Count</label>
+        <input type="number" name="stock_count" class="form-control" required min="1">
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Image URL</label>
+        <input type="text" name="image_url" class="form-control" placeholder="Optional">
+      </div>
+      <button type="submit" class="btn btn-primary w-100">Add Item</button>
+    </form>
+    
+    <div class="text-center mt-3">
+      <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Back to Dashboard</a>
+    </div>
   </div>
 </body>
 </html>
